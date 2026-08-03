@@ -1,5 +1,6 @@
 import { Type } from "typebox";
 import type { Tool } from "../model-client.ts";
+import type { E2BAdapter } from "../sandbox/e2b-adapter.ts";
 
 export const writeToolDefinition: Tool = {
     name: "write_file",
@@ -10,12 +11,8 @@ export const writeToolDefinition: Tool = {
     })
 };
 
-export async function writeToolHandler(args: Record<string, any>): Promise<string> {
+export async function writeToolHandler(args: Record<string, any>, e2b: E2BAdapter): Promise<string> {
     const { path, content } = args;
     
-    // TODO: Implement writing to the file.
-    // Remember for Step 5, this should eventually call through the e2b-adapter!
-    // For now, you can use Bun.write(path, content) to write it.
-    
-    return `TODO: Wrote to ${path}`;
+    return await e2b.writeFile(path, content);
 }

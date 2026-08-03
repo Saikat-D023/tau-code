@@ -1,5 +1,6 @@
 import { Type } from "typebox";
 import type { Tool } from "../model-client.ts";
+import type { E2BAdapter } from "../sandbox/e2b-adapter.ts";
 
 export const bashToolDefinition: Tool = {
     name: "bash",
@@ -9,12 +10,8 @@ export const bashToolDefinition: Tool = {
     })
 };
 
-export async function bashToolHandler(args: Record<string, any>): Promise<string> {
+export async function bashToolHandler(args: Record<string, any>, e2b: E2BAdapter): Promise<string> {
     const { command } = args;
     
-    // TODO: Implement executing the shell command.
-    // Remember for Step 5, this should eventually call through the e2b-adapter!
-    // For now, you can use Bun.spawn() or Node's child_process.exec()
-    
-    return `TODO: Executed command: ${command}`;
+    return await e2b.executeBash(command);
 }

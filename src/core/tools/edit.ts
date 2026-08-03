@@ -1,5 +1,6 @@
 import { Type } from "typebox";
 import type { Tool } from "../model-client.ts";
+import type { E2BAdapter } from "../sandbox/e2b-adapter.ts";
 
 export const editToolDefinition: Tool = {
     name: "edit_file",
@@ -11,11 +12,8 @@ export const editToolDefinition: Tool = {
     })
 };
 
-export async function editToolHandler(args: Record<string, any>): Promise<string> {
+export async function editToolHandler(args: Record<string, any>, e2b: E2BAdapter): Promise<string> {
     const { path, find, replace } = args;
     
-    // TODO: Implement reading the file, replacing 'find' with 'replace', and writing it back.
-    // Remember for Step 5, this should eventually call through the e2b-adapter!
-    
-    return `TODO: Edited ${path}`;
+    return await e2b.editFile(path, find, replace);
 }

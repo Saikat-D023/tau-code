@@ -1,5 +1,6 @@
 import { Type } from "typebox";
 import type { Tool } from "../model-client.ts";
+import type { E2BAdapter } from "../sandbox/e2b-adapter.ts";
 
 export const readToolDefinition: Tool = {
     name: "read_file",
@@ -9,12 +10,8 @@ export const readToolDefinition: Tool = {
     })
 };
 
-export async function readToolHandler(args: Record<string, any>): Promise<string> {
+export async function readToolHandler(args: Record<string, any>, e2b: E2BAdapter): Promise<string> {
     const { path } = args;
     
-    // TODO: Implement reading the file from the filesystem.
-    // Remember for Step 5, this should eventually call through the e2b-adapter!
-    // For now, you can use Bun.file(path).text() to read it.
-    
-    return `TODO: Return contents of ${path}`;
+    return await e2b.readFile(path);
 }
