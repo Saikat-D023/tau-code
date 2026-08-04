@@ -1,6 +1,7 @@
 import { OpenAIClient, type Message } from "./model-client.ts";
 import { ToolDispatcher } from "./tool-dispatcher.ts";
 import { SessionStore } from "./session/store.ts";
+import { hooks } from "./hooks.ts";
 
 export async function runAgent(userPrompt: string) {
     const client = new OpenAIClient();
@@ -10,11 +11,10 @@ export async function runAgent(userPrompt: string) {
     const sessionId = store.createSession();
     let parentId: string | null = null;
 
-    // TODO (Step 7): Append the initial user message to the session store and update current parentId
     const initialMessage: Message = { role: "user", content: userPrompt };
     parentId = store.appendTurn(sessionId, parentId, initialMessage);
 
-    console.log(`[User] ${userPrompt}`);
+    await hooks.emitTurnStart({ prompt: userPrompt });
 
     // The Agent Loop
     while (true) {
@@ -29,7 +29,9 @@ export async function runAgent(userPrompt: string) {
             console.log(`[AI] wants to use tool: ${response.tool_calls[0]?.name}`);
 
             for (const toolCall of response.tool_calls) {
+                await hooks.emitBeforeToolCall({ toolCall });
                 const result = await dispatcher.execute(toolCall);
+                await hooks.emitAfterToolCall({ toolCall, result });
 
                 parentId = store.appendTurn(sessionId, parentId, {
                     role: "tool",
@@ -40,6 +42,8 @@ export async function runAgent(userPrompt: string) {
         } else {
             // The AI didn't use a tool, so it must be talking to us normally!
             console.log(`[AI] ${response.content}`);
+
+            await hooks.emitTurnComplete({ finalResponse: response });
             break;
         }
     }

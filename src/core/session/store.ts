@@ -60,8 +60,6 @@ export class SessionStore {
     }
 
     public getBranch(sessionId: string, leafId: string): Message[] {
-        // TODO (Step 6): Write a while loop to query backwards from the leafId up to the root (where parent_id is null)
-        // TODO (Step 6): Reconstruct the `Message[]` array by unshifting each row into an array and return it
         const messages: Message[] = [];
         let currentId: string | null = leafId;
 
