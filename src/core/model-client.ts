@@ -100,9 +100,14 @@ export class OpenAIClient implements ModelClient {
             }));
         }
 
+        let finalModel = this.model;
+        if (this.apiKey.startsWith("sk-or-") && !finalModel.includes('/')) {
+            finalModel = `openai/${finalModel}`;
+        }
+
         // Prepare the request body
         const requestBody: any = {
-            model: this.model,
+            model: finalModel,
             messages: mappedMessages
         };
 
@@ -111,8 +116,13 @@ export class OpenAIClient implements ModelClient {
             requestBody.tools = mappedTools;
         }
 
+        const isOpenRouter = this.apiKey.startsWith("sk-or-");
+        const endpoint = isOpenRouter 
+            ? "https://openrouter.ai/api/v1/chat/completions" 
+            : "https://api.openai.com/v1/chat/completions";
+
         // Make the fetch request
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        const response = await fetch(endpoint, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${this.apiKey}`,
