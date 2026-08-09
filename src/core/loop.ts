@@ -1,7 +1,11 @@
 import { OpenAIClient, type Message } from "./model-client.ts";
 import { ToolDispatcher } from "./tool-dispatcher.ts";
 import { SessionStore } from "./session/store.ts";
-
+import { shouldRetrieve } from "./memory/gate.ts";
+import { db } from "./memory/schema.ts";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import * as os from "node:os";
 export interface LoopResult {
     reply: string;
     toolCalls: { tool: string; args: any; output: string }[];
@@ -46,8 +50,10 @@ export class Agent {
             result.iterations = i;
 
             const tools = this.dispatcher.getToolDefinitions();
-            const messages = this.store.getBranch(this.sessionId, this.parentId as string);
+            const history = this.store.getBranch(this.sessionId, this.parentId as string);
             
+            const messages = await this.buildWorkingMemory(userPrompt, history);
+
             // Send history and tools to the AI
             const response = await this.client.complete(messages, tools.length > 0 ? tools : undefined);
             
@@ -74,12 +80,74 @@ export class Agent {
                 // The AI didn't use a tool, so it must be talking to us normally!
                 result.reply = response.content ?? '';
                 notify('turn_end', { result });
+                await this.saveEpisodeAndConsolidate(userPrompt, result, ctx.sessionId);
                 return result;
             }
         }
 
         result.reply = '(Hit iteration limit — try breaking the request into smaller steps.)';
         notify('turn_end', { result });
+        await this.saveEpisodeAndConsolidate(userPrompt, result, ctx.sessionId);
         return result;
+    }
+
+    private async saveEpisodeAndConsolidate(userPrompt: string, result: LoopResult, sessionId: string) {
+        try {
+            const summaryPrompt = `Summarize the following interaction in a single short sentence:\nUser: ${userPrompt}\nAssistant: ${result.reply}`;
+            const sumRes = await this.client.complete([{ role: "user", content: summaryPrompt }]);
+            const summary = sumRes.content ?? "No summary";
+            
+            db.query(`INSERT INTO episodes (session_id, summary, raw_messages) VALUES (?, ?, ?)`).run(
+                sessionId,
+                summary,
+                JSON.stringify([{ role: "user", content: userPrompt }, { role: "assistant", content: result.reply }])
+            );
+        } catch (e) {
+            console.warn("[Memory] Failed to append episode:", e);
+        }
+        
+        try {
+            const { consolidateIfNeeded } = await import("./memory/consolidation.ts");
+            await consolidateIfNeeded(sessionId, this.client);
+        } catch (e) {
+            console.error("[Memory] Consolidation failed:", e);
+        }
+    }
+
+    private async buildWorkingMemory(userPrompt: string, history: Message[]): Promise<Message[]> {
+        const soulFile = path.join(os.homedir(), '.tau', 'SOUL.md');
+        let soul = '';
+        try {
+            soul = await fs.readFile(soulFile, 'utf-8');
+        } catch (e) {
+            // ignore
+        }
+
+        const gate = await shouldRetrieve(this.client, userPrompt);
+        let memories: string[] = [];
+
+        if (gate.retrieve && gate.query.trim()) {
+            try {
+                // SQLite FTS5 matching
+                const stmt = db.query(`SELECT content FROM facts_fts WHERE facts_fts MATCH $query ORDER BY rank LIMIT 5`);
+                const rows = stmt.all({ $query: gate.query }) as { content: string }[];
+                memories = rows.map((r) => r.content);
+            } catch (e) {
+                // FTS queries can throw if syntax is invalid
+                console.warn("[Memory] FTS search failed:", e);
+            }
+        }
+
+        const systemParts = [
+            soul,
+            memories.length ? `Relevant memories:\n${memories.map(m => `- ${m}`).join('\n')}` : '',
+            `Current time: ${new Date().toISOString()}`
+        ].filter(Boolean);
+
+
+        return [
+            { role: "user", content: `[SYSTEM CONTEXT]\n${systemParts.join('\n\n')}\n[/SYSTEM CONTEXT]` },
+            ...history
+        ];
     }
 }
