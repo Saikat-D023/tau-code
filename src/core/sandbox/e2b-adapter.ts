@@ -1,7 +1,8 @@
 import { Sandbox } from '@e2b/code-interpreter'
+import type { Operations } from "../operations.ts";
 
 
-export class E2BAdapter {
+export class E2BAdapter implements Operations {
     private sandbox?: Sandbox;
 
     private async getSandbox(): Promise<Sandbox> {

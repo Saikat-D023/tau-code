@@ -1,6 +1,6 @@
 import { Type } from "typebox";
 import type { Tool } from "../model-client.ts";
-import type { E2BAdapter } from "../sandbox/e2b-adapter.ts";
+import type { Operations } from "../operations.ts";
 
 export const writeToolDefinition: Tool = {
     name: "write_file",
@@ -11,8 +11,8 @@ export const writeToolDefinition: Tool = {
     })
 };
 
-export async function writeToolHandler(args: Record<string, any>, e2b: E2BAdapter): Promise<string> {
+export async function writeToolHandler(args: Record<string, any>, ops: Operations): Promise<string> {
     const { path, content } = args;
     
-    return await e2b.writeFile(path, content);
+    return await ops.writeFile(path, content);
 }

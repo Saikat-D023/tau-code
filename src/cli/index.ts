@@ -11,7 +11,7 @@ async function main() {
     console.log("Type 'exit' or 'quit' to end the session.");
     console.log("---------------------------------------");
 
-    const agent = new Agent();
+    const agent = new Agent({ maxIterations: 10 });
 
     while (true) {
         const userInput = await rl.question("\nYou: ");
@@ -25,7 +25,18 @@ async function main() {
         if (!trimmed) continue;
 
         try {
-            await agent.processTurn(trimmed);
+            const result = await agent.processTurn(trimmed, {
+                source: 'cli',
+                sessionId: 'cli-session',
+                observer: (kind, ev) => {
+                    if (kind === 'tool') {
+                        console.log(`\n  [tool] ${ev.tool} with args: ${JSON.stringify(ev.args)}`);
+                    } else if (kind === 'llm') {
+                        process.stdout.write('.');
+                    }
+                }
+            });
+            console.log(`\nAgent: ${result.reply}`);
         } catch (error) {
             console.error("Error processing turn:", error);
         }

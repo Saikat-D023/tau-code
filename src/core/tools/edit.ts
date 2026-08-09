@@ -1,6 +1,6 @@
 import { Type } from "typebox";
 import type { Tool } from "../model-client.ts";
-import type { E2BAdapter } from "../sandbox/e2b-adapter.ts";
+import type { Operations } from "../operations.ts";
 
 export const editToolDefinition: Tool = {
     name: "edit_file",
@@ -12,8 +12,8 @@ export const editToolDefinition: Tool = {
     })
 };
 
-export async function editToolHandler(args: Record<string, any>, e2b: E2BAdapter): Promise<string> {
+export async function editToolHandler(args: Record<string, any>, ops: Operations): Promise<string> {
     const { path, find, replace } = args;
     
-    return await e2b.editFile(path, find, replace);
+    return await ops.editFile(path, find, replace);
 }

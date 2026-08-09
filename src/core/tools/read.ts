@@ -1,6 +1,6 @@
 import { Type } from "typebox";
 import type { Tool } from "../model-client.ts";
-import type { E2BAdapter } from "../sandbox/e2b-adapter.ts";
+import type { Operations } from "../operations.ts";
 
 export const readToolDefinition: Tool = {
     name: "read_file",
@@ -10,8 +10,8 @@ export const readToolDefinition: Tool = {
     })
 };
 
-export async function readToolHandler(args: Record<string, any>, e2b: E2BAdapter): Promise<string> {
+export async function readToolHandler(args: Record<string, any>, ops: Operations): Promise<string> {
     const { path } = args;
     
-    return await e2b.readFile(path);
+    return await ops.readFile(path);
 }
