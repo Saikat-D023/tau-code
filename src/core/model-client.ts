@@ -43,7 +43,7 @@ export class OpenAIClient implements ModelClient {
     private model: string;
 
     constructor(model: string = "gpt-4o-mini") {
-        const key = process.env.OPENAI_API_KEY;
+        const key = (globalThis as any).process?.env?.OPENAI_API_KEY;
         if (!key) throw new Error("OPENAI_API_KEY environment variable is missing");
 
         this.apiKey = key;

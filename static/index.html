@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tau-Code Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- LEFT SIDEBAR -->
+        <nav id="sidebar" class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>Tau-Code</h1>
+            </div>
+            <ul class="nav-tabs">
+                <li class="nav-item active" data-tab="overview">Overview</li>
+                <li class="nav-item" data-tab="gateway">Gateway</li>
+                <li class="nav-item" data-tab="loop">Loop</li>
+                <li class="nav-item" data-tab="graph">Graph</li>
+                <li class="nav-item" data-tab="memory">Memory</li>
+                <li class="nav-item" data-tab="tools">Tools</li>
+                <li class="nav-item" data-tab="database">Database</li>
+                <li class="nav-item" data-tab="ops">Ops</li>
+                <li class="nav-item" data-tab="settings">Settings</li>
+            </ul>
+        </nav>
+
+        <div class="resize-handle" id="resize-sidebar"></div>
+
+        <!-- CENTER MAIN CONTENT -->
+        <main id="center-content" class="center-content">
+            <!-- Dynamic Tab Content goes here -->
+            <div id="tab-container"></div>
+        </main>
+
+        <div class="resize-handle" id="resize-chat"></div>
+
+        <!-- RIGHT CHAT DOCK -->
+        <aside id="chat-dock" class="chat-dock">
+            <header class="chat-header">
+                <h3>Chat Dock</h3>
+                <div class="status">
+                    <span class="status-dot online"></span>
+                    <span class="status-text">Connected</span>
+                </div>
+            </header>
+            
+            <div class="messages" id="messages">
+                <div class="message system">
+                    <div class="message-content">
+                        <p>Welcome to the Tau-Code Dashboard.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <form id="chat-form">
+                    <div class="input-wrapper">
+                        <textarea id="message-input" placeholder="Message Tau-Code..." rows="1" required autofocus></textarea>
+                        <button type="submit" id="send-btn" class="send-button" disabled>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Approval Modal -->
+    <div id="approval-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="modal-title warning">Approval Required</h3>
+            <p id="approval-message">Tau-Code wants to execute an action.</p>
+            <div class="modal-actions">
+                <button id="btn-deny" class="btn btn-secondary">Deny</button>
+                <button id="btn-approve" class="btn btn-primary">Approve</button>
+                <button id="btn-always-allow" class="btn btn-danger">Always Allow</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.ts"></script>
+    <script src="components/pills.ts"></script>
+    <script src="components/resizable-panel.ts"></script>
+    <script src="components/chat-dock.ts"></script>
+    
+    <script src="tabs/overview.ts"></script>
+    <script src="tabs/gateway.ts"></script>
+    <script src="tabs/loop.ts"></script>
+    <script src="tabs/graph.ts"></script>
+    <script src="tabs/memory.ts"></script>
+    <script src="tabs/tools.ts"></script>
+    <script src="tabs/database.ts"></script>
+    <script src="tabs/ops.ts"></script>
+    <script src="tabs/settings.ts"></script>
+    
+    <script src="app.ts"></script>
+</body>
+</html>
