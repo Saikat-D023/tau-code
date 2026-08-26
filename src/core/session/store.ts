@@ -3,19 +3,17 @@ import type { Message } from "../model-client.ts";
 import { join } from "path";
 import { readFileSync, existsSync, mkdirSync } from "fs";
 import { randomUUID } from "crypto";
+import { TAU_DIR, SESSION_DB_PATH } from "../tau-dir.ts";
 
 export class SessionStore {
     private db: Database;
 
-    constructor(dbPath: string = ".tau/session.sqlite") {
-        // Create directory if it doesn't exist
-        const dir = join(process.cwd(), ".tau");
-        if (!existsSync(dir)) {
-            mkdirSync(dir, { recursive: true });
+    constructor() {
+        if (!existsSync(TAU_DIR)) {
+            mkdirSync(TAU_DIR, { recursive: true });
         }
 
-        const fullDbPath = join(process.cwd(), dbPath);
-        this.db = new Database(fullDbPath, { create: true });
+        this.db = new Database(SESSION_DB_PATH, { create: true });
         this.initSchema();
     }
 

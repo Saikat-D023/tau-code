@@ -1,14 +1,12 @@
 import { Database } from 'bun:sqlite';
-import * as os from 'node:os';
-import * as path from 'node:path';
 import * as fs from 'node:fs';
+import { TAU_DIR, STATE_DB_PATH } from '../tau-dir.ts';
 
-const tauDir = path.join(os.homedir(), '.tau');
-if (!fs.existsSync(tauDir)) {
-    fs.mkdirSync(tauDir, { recursive: true });
+if (!fs.existsSync(TAU_DIR)) {
+    fs.mkdirSync(TAU_DIR, { recursive: true });
 }
 
-export const db = new Database(path.join(tauDir, 'state.db'));
+export const db = new Database(STATE_DB_PATH);
 
 db.run(`
   CREATE TABLE IF NOT EXISTS facts (
