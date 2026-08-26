@@ -1,4 +1,7 @@
-import type { Agent } from "../loop.ts"
+/**
+ * types.ts — Gateway Adapter Types.
+ */
+import type { Agent } from "../core/loop.ts"
 
 export interface TurnRequest {
     message: string;
