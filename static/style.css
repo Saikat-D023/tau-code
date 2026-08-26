@@ -614,6 +614,18 @@ input:focus, select:focus, textarea:focus {
     outline: none;
 }
 
+/* The closed <select> box inherits the dark theme via inline styles, but its
+   dropdown popup list is rendered by the browser and needs its own colors —
+   otherwise it falls back to a default white list with barely-visible text. */
+select {
+    color-scheme: dark;
+}
+
+select option {
+    background: var(--bg-elevated, #1b1d21);
+    color: var(--text-primary);
+}
+
 #tab-container > div[style*="background: var(--bg-secondary)"],
 #tab-container > div > div[style*="background: var(--bg-secondary)"] {
     background: var(--bg-elevated) !important;
