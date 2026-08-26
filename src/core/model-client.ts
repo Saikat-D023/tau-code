@@ -1,4 +1,5 @@
 import type { TSchema } from "typebox"
+import { resolveOpenAIApiKey } from "./providers/openai-auth.ts"
 
 
 // 1. Core Types
@@ -13,6 +14,7 @@ export interface AssistantMessage {
     role: "assistant";
     content: string;
     tool_calls?: ToolCall[];
+    usage?: { prompt_tokens: number; completion_tokens: number };
 }
 
 export interface ToolResultMessage {
@@ -43,10 +45,8 @@ export class OpenAIClient implements ModelClient {
     private model: string;
 
     constructor(model: string = "gpt-4o-mini") {
-        const key = (globalThis as any).process?.env?.OPENAI_API_KEY;
-        if (!key) throw new Error("OPENAI_API_KEY environment variable is missing");
-
-        this.apiKey = key;
+        // Prefers a subscription (OAuth) login over the OPENAI_API_KEY env var — see providers/openai-auth.ts
+        this.apiKey = resolveOpenAIApiKey();
         this.model = model;
     }
 
@@ -155,7 +155,11 @@ export class OpenAIClient implements ModelClient {
             role: "assistant",
             // Sometimes models return `null` content if they ONLY call a tool, so we default to ""
             content: responseMessage.content || "",
-            tool_calls: parsedToolCalls
+            tool_calls: parsedToolCalls,
+            usage: data.usage ? {
+                prompt_tokens: data.usage.prompt_tokens,
+                completion_tokens: data.usage.completion_tokens
+            } : undefined
         };
     }
 }
