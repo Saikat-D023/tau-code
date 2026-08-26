@@ -1,17 +1,27 @@
 {
-  "name": "tau",
-  "module": "index.ts",
+  "name": "taucode",
+  "module": "src/cli/index.ts",
   "type": "module",
   "private": true,
+  "bin": {
+    "taucode": "src/cli/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "^1.3.14"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
+  "scripts": {
+    "start": "bun run src/cli/index.ts",
+    "auth": "bun run src/cli/index.ts auth",
+    "dashboard": "bun run src/cli/index.ts",
+    "eval": "bun test src/evals/deterministic/",
+    "eval:judge": "bun run src/evals/judge/judge.ts",
+    "eval:gate": "bun run src/evals/gate.ts",
+    "trace": "echo 'Trace viewer: open .tau/traces/ in your JSONL viewer'"
+  },
   "dependencies": {
-    "@e2b/code-interpreter": "^2.7.0",
-    "e2b": "^2.37.0",
     "hono": "^4.13.1",
     "typebox": "^1.3.9"
   }
