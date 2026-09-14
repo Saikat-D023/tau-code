@@ -57,6 +57,70 @@ export class SessionStore {
         return turnId;
     }
 
+    /** Recent sessions with turn/branch counts, for the dashboard's Session Overview panel. */
+    public listSessions(limit = 8): {
+        id: string;
+        turnCount: number;
+        branchCount: number;
+        startedAt: string;
+        lastActivity: string;
+        preview: string;
+    }[] {
+        const rows = this.db.query(`
+            SELECT
+                t.session_id as id,
+                COUNT(*) as turnCount,
+                MIN(t.created_at) as startedAt,
+                MAX(t.created_at) as lastActivity,
+                (
+                    SELECT content FROM turns
+                    WHERE session_id = t.session_id AND role = 'user'
+                    ORDER BY created_at ASC LIMIT 1
+                ) as preview,
+                (
+                    SELECT COUNT(*) FROM (
+                        SELECT parent_id FROM turns
+                        WHERE session_id = t.session_id AND parent_id IS NOT NULL
+                        GROUP BY parent_id HAVING COUNT(*) > 1
+                    )
+                ) as branchCount
+            FROM turns t
+            GROUP BY t.session_id
+            ORDER BY lastActivity DESC
+            LIMIT ?
+        `).all(limit) as any[];
+
+        return rows.map(r => ({
+            id: r.id,
+            turnCount: r.turnCount,
+            branchCount: r.branchCount ?? 0,
+            startedAt: r.startedAt,
+            lastActivity: r.lastActivity,
+            preview: (r.preview || "").slice(0, 96),
+        }));
+    }
+
+    /** Ordered turn nodes for one session, for rendering a branch-timeline chart. */
+    public getSessionTimeline(sessionId: string): {
+        id: string;
+        parentId: string | null;
+        role: string;
+        createdAt: string;
+    }[] {
+        const rows = this.db.query(`
+            SELECT id, parent_id, role, created_at FROM turns
+            WHERE session_id = ?
+            ORDER BY created_at ASC
+        `).all(sessionId) as any[];
+
+        return rows.map(r => ({
+            id: r.id,
+            parentId: r.parent_id,
+            role: r.role,
+            createdAt: r.created_at,
+        }));
+    }
+
     public getBranch(sessionId: string, leafId: string): Message[] {
         const messages: Message[] = [];
         let currentId: string | null = leafId;
