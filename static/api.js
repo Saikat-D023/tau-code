@@ -1,6 +1,10 @@
 // api.js
 window.API = {
     overview: () => fetch('/api/overview').then(r => r.json()),
+    sessions: () => fetch('/api/sessions').then(r => r.json()),
+    sessionTimeline: (id) => fetch(`/api/sessions/${id}/timeline`).then(r => r.json()),
+    operations: () => fetch('/api/operations').then(r => r.json()),
+    providers: () => fetch('/api/providers').then(r => r.json()),
     memory: {
         semantic: () => fetch('/api/memory/semantic').then(r => r.json()),
         episodic: () => fetch('/api/memory/episodic').then(r => r.json()),
