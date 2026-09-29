@@ -2,42 +2,45 @@ window.Tabs = window.Tabs || {};
 
 window.Tabs.ops = async (container) => {
     const data = await window.API.ops();
-    
+    const pass = (v) => String(v).toLowerCase() === 'pass';
+
     container.innerHTML = `
-        <h2 style="margin-bottom: 1.5rem;">LLM Ops & Evals</h2>
-        
-        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
+        <h2>LLM Ops & Evals</h2>
+
+        <div class="panel card-row">
             <div>
-                <h3 style="margin-bottom: 0.5rem;">Release Gate Verdict</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">Run \`make gate\` to re-evaluate the agent against the test suite.</p>
+                <h3>Release Gate</h3>
+                <p class="sub-inline">Run <code>make gate</code> to re-evaluate the agent against the test suite.</p>
             </div>
-            <div style="font-size: 2rem; font-weight: bold; color: ${data.releaseGate === 'pass' ? 'var(--accent-primary)' : 'var(--danger)'}; text-transform: uppercase;">
-                ${data.releaseGate}
-            </div>
+            <span class="verdict">${data.releaseGate}</span>
         </div>
 
-        <h3 style="margin-bottom: 1rem;">Eval History</h3>
-        <table class="data-table" style="margin-bottom: 2rem;">
-            <thead><tr><th>Date</th><th>Deterministic</th><th>LLM-as-Judge</th><th>Verdict</th></tr></thead>
-            <tbody>
-                ${data.evalHistory.map(e => `<tr>
-                    <td>${e.date}</td>
-                    <td>${e.deterministic}%</td>
-                    <td>${e.judge}%</td>
-                    <td style="color: ${e.verdict === 'pass' ? 'var(--accent-primary)' : 'var(--danger)'}; font-weight: bold;">${e.verdict.toUpperCase()}</td>
-                </tr>`).join('')}
-            </tbody>
-        </table>
-        
-        <h3 style="margin-bottom: 1rem;">Slowest Turns</h3>
-        <table class="data-table" style="margin-bottom: 2rem;">
-            <thead><tr><th>Turn ID</th><th>Latency</th></tr></thead>
-            <tbody>
-                ${data.slowestTurns.map(t => `<tr>
-                    <td><code>${t.id}</code></td>
-                    <td style="color: var(--warning);">${t.latency}</td>
-                </tr>`).join('')}
-            </tbody>
-        </table>
+        <div class="panel-header"><h3>Eval History</h3></div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>Date</th><th>Deterministic</th><th>LLM-as-Judge</th><th>Verdict</th></tr></thead>
+                <tbody>
+                    ${data.evalHistory.length ? data.evalHistory.map(e => `<tr>
+                        <td class="mono">${e.date}</td>
+                        <td class="mono">${e.deterministic}%</td>
+                        <td class="mono">${e.judge}%</td>
+                        <td><span class="pill ${pass(e.verdict) ? 'ok' : 'gate'}">${String(e.verdict).toUpperCase()}</span></td>
+                    </tr>`).join('') : '<tr><td class="empty" colspan="4">No evals recorded yet.</td></tr>'}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel-header"><h3>Slowest Turns</h3></div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>Turn ID</th><th>Latency</th></tr></thead>
+                <tbody>
+                    ${data.slowestTurns.length ? data.slowestTurns.map(t => `<tr>
+                        <td><code>${t.id}</code></td>
+                        <td class="mono">${t.latency}</td>
+                    </tr>`).join('') : '<tr><td class="empty" colspan="2">No turns recorded yet.</td></tr>'}
+                </tbody>
+            </table>
+        </div>
     `;
 };

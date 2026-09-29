@@ -7,7 +7,7 @@
 <h1 align="center">τ taucode</h1>
 <p align="center"><strong>A coding agent that remembers.</strong></p>
 <p align="center">
-  <a href="https://tau-code.vercel.app/">Website</a> · <a href="#quickstart">Quickstart</a> · <a href="#commands">Commands</a> · <a href="#architecture">Architecture</a> · <a href="./docs/adr/">ADRs</a>
+  <a href="https://tau-code.vercel.app/">Website</a> · <a href="#quickstart">Quickstart</a> · <a href="#dashboard">Dashboard</a> · <a href="#commands">Commands</a> · <a href="#architecture">Architecture</a> · <a href="./docs/adr/">ADRs</a>
 </p>
 
 ---
@@ -16,6 +16,10 @@ taucode reads, writes and edits files and runs shell commands like any coding ag
 
 Inspired by [pi-code](https://github.com/badlogic/pi-mono) (the coding-agent tool layer) and [waku-agent](https://github.com/ShenSeanChen/waku-agent) (the memory/eval/harness pillars).
 
+<p align="center">
+  <img src="./docs/images/landing-page.png" alt="taucode landing page" width="900">
+</p>
+
 ## Highlights
 
 | | |
@@ -23,7 +27,7 @@ Inspired by [pi-code](https://github.com/badlogic/pi-mono) (the coding-agent too
 | 🧠 **Memory that lasts** | Three kinds of memory — Facts, Episodes and Skills — stored per project in SQLite with FTS5. A Retrieval Gate decides *per turn* whether to query memory at all, so irrelevant facts never pollute context. |
 | 🔀 **Provider-agnostic** | Log in to OpenAI via browser OAuth (ChatGPT/Codex subscription) or paste an Anthropic API key. Swap models mid-session with `/model`. |
 | 🖥️ **Fully local** | No hosted service, no cloud sandbox. The agent, memory and live dashboard all run on your machine. Every write, edit and shell command goes through a permission gate. |
-| 📊 **Live dashboard** | A local web UI at `localhost:7777` shows reasoning, memory, tool calls, the graph workflow, traces and cost tracking in real time. |
+| 📊 **Live dashboard** | A minimal local web UI at `localhost:7777` with light and dark themes shows sessions, memory, tool calls, the graph workflow, traces and cost tracking in real time. |
 | 🧪 **Eval suite** | Deterministic assertions + LLM-as-judge scoring, with a CI gate that fails the build when scores drop below a threshold. |
 | 📝 **Tracing & cost tracking** | Every turn writes JSONL traces (`.tau/traces/`) and an append-only cost ledger (`.tau/usage.jsonl`) so you can see exactly what the agent did and what it cost. |
 
@@ -76,6 +80,47 @@ This launches:
 - A **live dashboard** at [localhost:7777](http://localhost:7777) showing reasoning, memory, tool calls and the graph workflow
 
 On first run, tau prompts the provider picker automatically if you haven't logged in yet.
+
+## Dashboard
+
+`bun start` serves a local dashboard at [localhost:7777](http://localhost:7777). It is plain HTML, CSS and JS (no build step) in [`static/`](./static/), with a Hono server behind it in `src/gateway/dashboard/`. It follows your OS theme, and the toggle in the sidebar footer overrides it and remembers your choice.
+
+| Light | Dark |
+|---|---|
+| <img src="./docs/images/dashboard-light.png" alt="taucode dashboard, light theme"> | <img src="./docs/images/dashboard-dark.png" alt="taucode dashboard, dark theme"> |
+
+The chat dock on the right talks to the same agent as the terminal, streams reasoning and tool calls as they happen, and asks for approval before gated actions.
+
+| Tab | What it shows |
+|-----|---------------|
+| **Overview** | Sessions-per-day chart, agent status, Retrieval Gate hit rate, stat cards for sessions, facts and episodes, the session branch timeline, recent Permission Gate operations, per-provider usage and recent episodes |
+| **Gateway** | Unified inbox across cli, web, telegram and voice (placeholder data for now) |
+| **Loop** | Every traced turn: gate decision, act/observe steps, tokens, cost and reply |
+| **Graph** | Triage graph topology (placeholder until graph workflows are fully wired up) |
+| **Memory** | Semantic facts, episodic summaries and procedural skills, with a Semantic / Episodic / Procedural switch |
+| **Tools** | The registered tool list and connected MCP servers |
+| **Database** | Table list and a read-only SQL console over `state.db` (writes are rejected) |
+| **Ops** | Release gate verdict, eval history and slowest turns |
+| **Settings** | Model configuration and feature flags (not yet wired to the backend) |
+
+The dashboard uses Inter for text and JetBrains Mono for data such as numbers, IDs, timestamps and code.
+
+## Website
+
+The landing page is a single static file at [`site/index.html`](./site/index.html), with its images in `site/assets/` and a τ favicon. It has the same light and dark themes, with a toggle in the top bar. To preview it, open the file in a browser:
+
+```bash
+# Windows
+start site\index.html
+
+# macOS
+open site/index.html
+
+# Linux
+xdg-open site/index.html
+```
+
+The dashboard also ships a τ favicon, at `static/favicon.svg`.
 
 ## Commands
 
@@ -179,6 +224,10 @@ src/
     ├── cli/                # Terminal chat loop
     ├── dashboard/          # Hono server for the local web dashboard
     └── telegram/           # Telegram gateway (skeleton)
+
+static/                     # Dashboard UI (plain JS: app.js, api.js, tabs/, components/)
+site/                       # Landing page (index.html, assets/, favicon.svg)
+docs/                       # ADRs and README images
 ```
 
 ### Key design decisions

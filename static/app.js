@@ -36,6 +36,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Theme toggle — follows the OS until the user picks one.
+    const root = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const currentTheme = () => root.dataset.theme || (systemDark() ? 'dark' : 'light');
+    const paintToggle = () => { toggle.textContent = currentTheme() === 'dark' ? 'light' : 'dark'; };
+    toggle.addEventListener('click', () => {
+        const next = currentTheme() === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next;
+        try { localStorage.setItem('theme', next); } catch {}
+        paintToggle();
+    });
+    paintToggle();
+
+    // Sidebar footer: version + active provider.
+    Promise.all([window.API.ops(), window.API.providers()]).then(([ops, providers]) => {
+        const active = providers.find(p => p.active);
+        const version = ops.releaseGate === 'vunknown' ? 'tau' : ops.releaseGate;
+        document.getElementById('sidebar-meta').textContent =
+            `${version}${active ? ' · ' + active.label.toLowerCase() : ''}`;
+    }).catch(() => {});
+
     // Load default tab
     loadTab('overview');
 });

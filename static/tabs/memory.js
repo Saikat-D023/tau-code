@@ -5,50 +5,37 @@ window.Tabs.memory = async (container) => {
     const epis = await window.API.memory.episodic();
     const proc = await window.API.memory.procedural();
 
-    let html = `
-        <h2 style="margin-bottom: 1.5rem;">Memory Pillars</h2>
-        
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-            <button class="btn btn-secondary" onclick="showMemTab('sem')">Semantic</button>
-            <button class="btn btn-secondary" onclick="showMemTab('epis')">Episodic</button>
-            <button class="btn btn-secondary" onclick="showMemTab('proc')">Procedural</button>
-        </div>
-
-        <div id="mem-sem" class="mem-view active">
-            <h3 style="margin-bottom: 1rem;">Semantic Facts</h3>
+    const table = (head, rows, cols) => `
+        <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>ID</th><th>Content</th><th>Source</th><th>Created</th></tr></thead>
+                <thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead>
                 <tbody>
-                    ${sem.map(f => `<tr><td>${f.id}</td><td>${f.content}</td><td>${f.source}</td><td>${f.created_at}</td></tr>`).join('')}
+                    ${rows.length
+                        ? rows.map(r => `<tr>${cols.map(c => `<td>${r[c] ?? ''}</td>`).join('')}</tr>`).join('')
+                        : `<tr><td class="empty" colspan="${head.length}">Nothing stored yet.</td></tr>`}
                 </tbody>
             </table>
+        </div>`;
+
+    container.innerHTML = `
+        <h2>Memory Pillars</h2>
+
+        <div class="seg">
+            <button class="btn on" data-mem="sem">Semantic</button>
+            <button class="btn" data-mem="epis">Episodic</button>
+            <button class="btn" data-mem="proc">Procedural</button>
         </div>
 
-        <div id="mem-epis" class="mem-view" style="display:none;">
-            <h3 style="margin-bottom: 1rem;">Episodic Memory</h3>
-            <table class="data-table">
-                <thead><tr><th>ID</th><th>Date</th><th>Summary</th></tr></thead>
-                <tbody>
-                    ${epis.map(e => `<tr><td>${e.id}</td><td>${e.date}</td><td>${e.summary}</td></tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
-
-        <div id="mem-proc" class="mem-view" style="display:none;">
-            <h3 style="margin-bottom: 1rem;">Procedural Memory (Skills)</h3>
-            <table class="data-table">
-                <thead><tr><th>Name</th><th>Description</th><th>Origin</th></tr></thead>
-                <tbody>
-                    ${proc.map(p => `<tr><td>${p.name}</td><td>${p.description}</td><td>${p.origin}</td></tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
+        <div id="mem-sem" class="mem-view">${table(['ID', 'Content', 'Source', 'Created'], sem, ['id', 'content', 'source', 'created_at'])}</div>
+        <div id="mem-epis" class="mem-view" style="display:none;">${table(['ID', 'Date', 'Summary'], epis, ['id', 'date', 'summary'])}</div>
+        <div id="mem-proc" class="mem-view" style="display:none;">${table(['Name', 'Description', 'Origin'], proc, ['name', 'description', 'origin'])}</div>
     `;
 
-    container.innerHTML = html;
-
-    window.showMemTab = (id) => {
-        document.querySelectorAll('.mem-view').forEach(el => el.style.display = 'none');
-        document.getElementById('mem-' + id).style.display = 'block';
-    };
+    container.querySelectorAll('.seg .btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            container.querySelectorAll('.seg .btn').forEach(b => b.classList.toggle('on', b === btn));
+            container.querySelectorAll('.mem-view').forEach(el => el.style.display = 'none');
+            container.querySelector('#mem-' + btn.dataset.mem).style.display = 'block';
+        });
+    });
 };

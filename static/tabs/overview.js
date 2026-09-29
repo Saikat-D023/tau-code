@@ -1,19 +1,34 @@
 window.Tabs = window.Tabs || {};
 
 (() => {
-    /** Minimal inline SVG sparkline — no charting library, no invented trend. */
-    function sparkline(series, color) {
-        const w = 220, h = 28, pad = 2;
+    let chartSeq = 0;
+
+    /** Inline SVG area chart: accent line over a fading fill. No charting library. */
+    function areaChart(series, { w = 220, h = 44, pad = 3, strokeWidth = 2, cls = 'sparkline' } = {}) {
+        const id = `area-fill-${chartSeq++}`;
         const max = Math.max(1, ...series);
         const step = series.length > 1 ? (w - pad * 2) / (series.length - 1) : 0;
-        const points = series.map((v, i) => {
-            const x = pad + i * step;
-            const y = h - pad - (v / max) * (h - pad * 2);
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
-        }).join(' ');
-        return `<svg class="sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-            <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        const pts = series.map((v, i) => [pad + i * step, h - pad - (v / max) * (h - pad * 2)]);
+        const line = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+        const area = `${pad},${h} ${line} ${(pad + (series.length - 1) * step).toFixed(1)},${h}`;
+        return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+            <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--accent-primary)" stop-opacity="0.32"/>
+                <stop offset="1" stop-color="var(--accent-primary)" stop-opacity="0"/>
+            </linearGradient></defs>
+            <polygon points="${area}" fill="url(#${id})"/>
+            <polyline points="${line}" fill="none" stroke="var(--accent-primary)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
         </svg>`;
+    }
+
+    function dayLabels(n) {
+        const out = [];
+        for (let i = n - 1; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            out.push(d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+        }
+        return out;
     }
 
     function timeAgo(iso) {
@@ -88,12 +103,12 @@ window.Tabs = window.Tabs || {};
         return `<div class="branch-chart-wrap"><svg width="${width}" height="${Math.max(height, 60)}" viewBox="0 0 ${width} ${Math.max(height, 60)}">${edges}${dots}</svg></div>`;
     }
 
-    function statCard(label, value, series, color, suffix = '') {
+    function statCard(label, value, series, suffix = '') {
         return `
             <div class="stat-card">
                 <div class="stat-label">${label}</div>
                 <div class="stat-value">${value}${suffix}</div>
-                ${sparkline(series, color)}
+                ${areaChart(series)}
             </div>`;
     }
 
@@ -165,12 +180,40 @@ window.Tabs = window.Tabs || {};
 
         let selectedSessionId = sessions[0]?.id ?? null;
 
+        const activeProvider = providers.find(p => p.active);
+        const connected = !!activeProvider && activeProvider.authMethod !== 'Not connected';
+        const daily = overview.stats.activeSessions.series;
+        const labels = dayLabels(daily.length);
+        const gateRate = overview.stats.gateHitRate.value;
+
         container.innerHTML = `
-            <div class="ov-stats">
-                ${statCard('Active Sessions', overview.stats.activeSessions.value, overview.stats.activeSessions.series, 'var(--accent-primary)')}
-                ${statCard('Facts Stored', overview.stats.facts.value, overview.stats.facts.series, 'var(--accent-primary)')}
-                ${statCard('Episodes Logged', overview.stats.episodes.value, overview.stats.episodes.series, 'var(--accent-primary)')}
-                ${statCard('Retrieval Gate Hit Rate', overview.stats.gateHitRate.value, overview.stats.gateHitRate.series, 'var(--trust)', '%')}
+            <h2>Overview</h2>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Sessions</h3>
+                    <span class="panel-meta">active per day · last ${daily.length} days</span>
+                </div>
+                ${areaChart(daily, { w: 800, h: 160, pad: 4, cls: 'hero-chart' })}
+                <div class="chart-axis">${[0, 2, 4, 6, 8, 10, 12, 13].filter(i => i < labels.length).map(i => `<span>${labels[i]}</span>`).join('')}</div>
+            </div>
+
+            <div class="panel">
+                <div class="card-row status-row">
+                    <div>
+                        <h3>Agent Status</h3>
+                        <div class="sub-inline">${connected ? `${activeProvider.label} · ${activeProvider.authMethod}` : 'No provider connected'}</div>
+                    </div>
+                    <span class="pill ${connected ? 'ok' : ''}">${connected ? 'Connected' : 'Offline'}</span>
+                </div>
+                <div class="progress-head"><span>Retrieval Gate hit rate</span><span class="mono">${gateRate}%</span></div>
+                <div class="progress-track"><div class="progress-fill" style="width:${gateRate}%"></div></div>
+                <div class="ov-stats">
+                    ${statCard('Active Sessions', overview.stats.activeSessions.value, overview.stats.activeSessions.series)}
+                    ${statCard('Facts Stored', overview.stats.facts.value, overview.stats.facts.series)}
+                    ${statCard('Episodes Logged', overview.stats.episodes.value, overview.stats.episodes.series)}
+                    ${statCard('Gate Hit Rate', overview.stats.gateHitRate.value, overview.stats.gateHitRate.series, '%')}
+                </div>
             </div>
 
             <div class="ov-grid">
@@ -184,9 +227,9 @@ window.Tabs = window.Tabs || {};
                         ${renderSessions(sessions, selectedSessionId)}
                     </div>
 
-                    <div class="panel gate-panel" id="gate-panel">
+                    <div class="panel" id="gate-panel">
                         <div class="panel-header">
-                            <h3>Permission Gate — recent Operations</h3>
+                            <h3>Permission Gate</h3>
                             <span class="panel-meta">${overview.gateStats.retrieved} retrieved · ${overview.gateStats.skipped} skipped</span>
                         </div>
                         <div id="ops-list">${renderOps(ops)}</div>
